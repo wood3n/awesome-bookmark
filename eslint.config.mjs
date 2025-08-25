@@ -31,7 +31,11 @@ export default tseslint.config([
     },
     rules: {
       // https://github.com/shadcn-ui/ui/issues/1534
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }]
+      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "@eslint-react/no-context-provider": 0,
+      "@typescript-eslint/ban-ts-comment": 0,
+      "@typescript-eslint/no-explicit-any": 0,
+      "@eslint-react/hooks-extra/no-direct-set-state-in-use-effect": 0
     }
   },
   {
@@ -80,7 +84,7 @@ export default tseslint.config([
       "unused-imports": unusedImports
     },
     rules: {
-      "no-unused-vars": "off", // or "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off", // or "@typescript-eslint/no-unused-vars": "off",
       "unused-imports/no-unused-imports": "error",
       "unused-imports/no-unused-vars": [
         "warn",

@@ -1,59 +1,136 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
+
+import ExportIcon from "@/assets/icons/export.svg?react";
+import ImportIcon from "@/assets/icons/import.svg?react";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn, deepFilterBookmarkFolders, findBookmarkNodeById, flatBookmarkNode } from "@/lib/utils";
+
+import { Button } from "../components/ui/button";
+import EditBookmark from "./bookmark-action";
+import Export from "./bookmark-action/export";
+import ImportBookmark from "./bookmark-action/import";
+import BookmarkBreadcrumb from "./bookmark-breadcrumb";
+import Content from "./content";
+import Recent from "./recent";
+import Side from "./side";
 
 const Home = () => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [folderType, setFolderType] = useState<chrome.bookmarks.FolderType>("bookmarks-bar");
+  const [bookmarks, setBookmarks] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<chrome.bookmarks.BookmarkTreeNode>();
+  const [openCreateBookmark, setOpenCreateBookmark] = useState(false);
+  const [openExportBookmark, setOpenExportBookmark] = useState(false);
+  const [openImportBookmark, setOpenImportBookmark] = useState(false);
+
+  const getBookmarks = async () => {
+    const bookmarks = await chrome.bookmarks.getTree();
+    console.log(bookmarks);
+
+    // the first folder is the root folder, we should get children
+    setBookmarks(bookmarks?.[0]?.children || []);
+    if (!currentFolder) {
+      setCurrentFolder(bookmarks?.[0]?.children?.[0]);
+    }
+  };
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    getBookmarks();
   }, []);
 
+  const flatedBookmarkNode = useMemo(() => {
+    if (!currentFolder) {
+      return [];
+    }
+
+    return flatBookmarkNode(currentFolder, bookmarks);
+  }, [currentFolder, bookmarks]);
+
+  const folderTypes = useMemo(() => {
+    return bookmarks?.map((item) => ({
+      title: item.title,
+      folderType: item.folderType
+    }));
+  }, [bookmarks]);
+
+  const bookmarkFolders = useMemo(() => {
+    return deepFilterBookmarkFolders(bookmarks.find((item) => item.folderType === folderType)?.children || []);
+  }, [bookmarks, folderType]);
+
   return (
-    <div className="flex h-dvh w-dvw flex-col items-center justify-center">
-      <div className="flex w-full justify-between px-6 py-4">
-        <h1 className="text-2xl font-bold">Rsbuild Shadcn Boilerplate</h1>
-        <ThemeToggle />
-      </div>
-      <div className="flex min-h-0 flex-[1] items-center justify-center overflow-auto">
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
-            <CardDescription>Enter your email below to login to your account</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input ref={inputRef} id="email" type="email" placeholder="m@example.com" required />
-                </div>
-                <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <Button variant="link" className="ml-auto inline-block text-sm underline-offset-4 hover:underline">
-                      Forgot your password?
-                    </Button>
-                  </div>
-                  <Input id="password" type="password" required />
-                </div>
-              </div>
-            </form>
-          </CardContent>
-          <CardFooter className="flex-col gap-2">
-            <Button type="submit" variant="default" className="w-full">
-              Login
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    </div>
+    <SidebarProvider>
+      <Side
+        rootFolderId={bookmarks.find((item) => item.folderType === folderType)?.id as string}
+        folderTypes={folderTypes}
+        folderType={folderType}
+        onFolderTypeChange={(v) => {
+          setFolderType(v);
+          setCurrentFolder(bookmarks.find((item) => item.folderType === v));
+        }}
+        activeKey={currentFolder?.id}
+        onItemClick={setCurrentFolder}
+        bookmarkFolders={bookmarkFolders}
+        refresh={getBookmarks}
+      />
+      <SidebarInset>
+        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="-ml-1" />
+            {Boolean(flatedBookmarkNode.length) && (
+              <Separator orientation="vertical" className={cn("mr-2 data-[orientation=vertical]:h-4")} />
+            )}
+            <BookmarkBreadcrumb data={flatedBookmarkNode} onClick={setCurrentFolder} />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="secondary" size="icon" onClick={() => setOpenCreateBookmark(true)}>
+                  <Plus />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>添加书签</p>
+              </TooltipContent>
+            </Tooltip>
+            <Recent />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="secondary" size="icon" onClick={() => setOpenExportBookmark(true)}>
+                  <ExportIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>导出书签</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="secondary" size="icon" onClick={() => setOpenImportBookmark(true)}>
+                  <ImportIcon />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>导入书签</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </header>
+        <Content data={findBookmarkNodeById(bookmarks, currentFolder?.id)} />
+      </SidebarInset>
+      {Boolean(currentFolder?.id) && (
+        <EditBookmark
+          open={openCreateBookmark}
+          onOpenChange={setOpenCreateBookmark}
+          folderId={currentFolder?.id as string}
+          refresh={getBookmarks}
+        />
+      )}
+      <Export bookmarks={bookmarks} open={openExportBookmark} onOpenChange={setOpenExportBookmark} />
+      <ImportBookmark open={openImportBookmark} onOpenChange={setOpenImportBookmark} />
+    </SidebarProvider>
   );
 };
 

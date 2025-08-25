@@ -3,7 +3,7 @@ import Home from "@/home";
 
 const App = () => {
   return (
-    <ThemeProvider defaultTheme="light" storageKey="project-ui-theme">
+    <ThemeProvider storageKey="extension-ui-theme">
       <Home />
     </ThemeProvider>
   );
