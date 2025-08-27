@@ -4,15 +4,17 @@ import showdown from "showdown";
 import MdIcon from "@/assets/icons/md.svg?react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useBookmark } from "@/context/bookmark/use-bookmark";
 import { downloadFileFromStr, exportBookmarkHtml } from "@/lib/utils";
 
 interface Props {
-  bookmarks: chrome.bookmarks.BookmarkTreeNode[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }
 
-const Export = ({ bookmarks, open, onOpenChange }: Props) => {
+const Export = ({ open, onOpenChange }: Props) => {
+  const { bookmarks } = useBookmark();
+
   const exportJson = () => {
     downloadFileFromStr("bookmarks.json", JSON.stringify(bookmarks, null, 2));
   };

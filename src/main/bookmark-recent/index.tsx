@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { faviconURL } from "@/lib/utils";
 
-const Recent = () => {
+const BookmarkRecent = () => {
   const [open, setOpen] = useState(false);
   const [bookmarks, setBookmarks] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
 
@@ -31,8 +31,8 @@ const Recent = () => {
           <p>最近添加的书签</p>
         </TooltipContent>
       </Tooltip>
-      <Dialog modal open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-[800px] gap-1 p-0">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-[800px] max-w-[800px] gap-1 p-0 sm:max-w-3xl">
           <DialogHeader className="p-4">
             <DialogTitle>最近添加的书签</DialogTitle>
           </DialogHeader>
@@ -61,4 +61,4 @@ const Recent = () => {
   );
 };
 
-export default Recent;
+export default BookmarkRecent;

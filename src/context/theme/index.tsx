@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { Theme, ThemeProviderProps } from "./type";
+import type { Theme, ThemeProviderProps } from "./types";
 
 import { ThemeProviderContext } from "./theme-context";
 

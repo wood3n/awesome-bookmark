@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Plus } from "lucide-react";
 
@@ -7,6 +7,7 @@ import ImportIcon from "@/assets/icons/import.svg?react";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBookmark } from "@/context/bookmark/use-bookmark";
 import { cn, deepFilterBookmarkFolders, findBookmarkNodeById, flatBookmarkNode } from "@/lib/utils";
 
 import { Button } from "../components/ui/button";
@@ -20,26 +21,11 @@ import Side from "./side";
 
 const Home = () => {
   const [folderType, setFolderType] = useState<chrome.bookmarks.FolderType>("bookmarks-bar");
-  const [bookmarks, setBookmarks] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
-  const [currentFolder, setCurrentFolder] = useState<chrome.bookmarks.BookmarkTreeNode>();
   const [openCreateBookmark, setOpenCreateBookmark] = useState(false);
   const [openExportBookmark, setOpenExportBookmark] = useState(false);
   const [openImportBookmark, setOpenImportBookmark] = useState(false);
 
-  const getBookmarks = async () => {
-    const bookmarks = await chrome.bookmarks.getTree();
-    console.log(bookmarks);
-
-    // the first folder is the root folder, we should get children
-    setBookmarks(bookmarks?.[0]?.children || []);
-    if (!currentFolder) {
-      setCurrentFolder(bookmarks?.[0]?.children?.[0]);
-    }
-  };
-
-  useEffect(() => {
-    getBookmarks();
-  }, []);
+  const { bookmarks, setFolder } = useBookmark();
 
   const flatedBookmarkNode = useMemo(() => {
     if (!currentFolder) {
@@ -68,12 +54,11 @@ const Home = () => {
         folderType={folderType}
         onFolderTypeChange={(v) => {
           setFolderType(v);
-          setCurrentFolder(bookmarks.find((item) => item.folderType === v));
+          setCurrentFolder(bookmarks.find((item) => item.folderType === v)?.children?.[0]);
         }}
         activeKey={currentFolder?.id}
         onItemClick={setCurrentFolder}
         bookmarkFolders={bookmarkFolders}
-        refresh={getBookmarks}
       />
       <SidebarInset>
         <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center justify-between px-4">

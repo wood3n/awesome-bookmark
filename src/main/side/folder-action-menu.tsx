@@ -11,16 +11,15 @@ import {
   ContextMenuTrigger
 } from "@/components/ui/context-menu";
 
-import EditBookmark from "../bookmark-action";
-import EditFolder from "../bookmark-folder-action";
+import BookmarkFormDialog from "../bookmark-form-dialog";
+import FolderForm from "./folder-form";
 
 interface Props {
-  data: chrome.bookmarks.BookmarkTreeNode;
+  bookmarkFolder: chrome.bookmarks.BookmarkTreeNode;
   children: React.ReactNode;
-  refresh: () => void;
 }
 
-const ItemAction = ({ data, children, refresh }: Props) => {
+const FolderActionMenu = ({ bookmarkFolder, children }: Props) => {
   const [openCreateBookmark, setOpenCreateBookmark] = useState(false);
   const [openCreateFolder, setOpenCreateFolder] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
@@ -33,7 +32,7 @@ const ItemAction = ({ data, children, refresh }: Props) => {
         <ContextMenuContent>
           <ContextMenuItem className="flex items-center" onClick={() => setOpenEditDialog(true)}>
             <Pencil />
-            编辑
+            修改名称
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem className="flex items-center" onClick={() => setOpenCreateBookmark(true)}>
@@ -55,27 +54,25 @@ const ItemAction = ({ data, children, refresh }: Props) => {
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-      <EditFolder open={openEditDialog} onOpenChange={setOpenEditDialog} data={data} refresh={refresh} />
-      <EditBookmark
+      <FolderForm open={openEditDialog} onOpenChange={setOpenEditDialog} data={bookmarkFolder} />
+      <FolderForm open={openCreateFolder} onOpenChange={setOpenCreateFolder} parentFolder={bookmarkFolder} />
+      <BookmarkFormDialog
         open={openCreateBookmark}
         onOpenChange={setOpenCreateBookmark}
-        folderId={data.id}
-        refresh={refresh}
+        parentFolder={bookmarkFolder}
       />
-      <EditFolder open={openCreateFolder} onOpenChange={setOpenCreateFolder} folderId={data.id} refresh={refresh} />
       <ConfirmDialog
-        title={`删除文件夹${data?.title}？`}
+        title={`删除文件夹${bookmarkFolder?.title}？`}
         open={openDeleteDialog}
         onOpenChange={setOpenDeleteDialog}
         confirmButtonVariant="destructive"
         onConfirm={() => {
-          chrome.bookmarks.removeTree(data.id);
+          chrome.bookmarks.removeTree(bookmarkFolder.id);
           setOpenDeleteDialog(false);
-          refresh();
         }}
       />
     </>
   );
 };
 
-export default ItemAction;
+export default FolderActionMenu;

@@ -1,10 +1,14 @@
-import { ThemeProvider } from "@/components/theme-provider";
-import Home from "@/home";
+import { ThemeProvider } from "@/context/theme";
+import Main from "@/main";
+
+import BookmarkFolder from "./context/bookmark";
 
 const App = () => {
   return (
     <ThemeProvider storageKey="extension-ui-theme">
-      <Home />
+      <BookmarkFolder>
+        <Main />
+      </BookmarkFolder>
     </ThemeProvider>
   );
 };

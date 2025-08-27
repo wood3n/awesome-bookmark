@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { faviconURL, getSiteMeta } from "@/lib/utils";
 
-import EditBookmark from "../bookmark-action";
+import EditBookmark from "../bookmark-form-dialog";
 import CardSkeleton from "./card-skeleton";
 
 interface Props {
@@ -41,6 +41,7 @@ const BookmarkUrlCard = ({ data }: Props) => {
     if (data.url) {
       getSiteData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.url]);
 
   if (!siteData && loading) {
@@ -62,15 +63,18 @@ const BookmarkUrlCard = ({ data }: Props) => {
       <CardFooter className="line-clamp-[2] flex-col items-start gap-1.5 text-sm">
         {siteData?.description || siteData?.url || data.url}
       </CardFooter>
-      <div className="absolute right-0 bottom-0 left-0 m-2 translate-y-6 transform items-center justify-end space-x-4 rounded-xl bg-transparent px-4 py-2 opacity-0 backdrop-blur transition group-hover:flex group-hover:translate-y-0 group-hover:opacity-100">
-        <Button variant="secondary" className="flex-1" onClick={() => setOpenEditBookmark(true)}>
+      <div
+        aria-hidden="true"
+        className="absolute right-0 bottom-0 left-0 m-2 flex translate-y-6 transform items-center justify-end space-x-4 rounded-xl bg-transparent px-4 py-2 opacity-0 backdrop-blur transition group-hover:flex group-hover:translate-y-0 group-hover:opacity-100"
+      >
+        <Button variant="secondary" className="w-1/2 flex-1" onClick={() => setOpenEditBookmark(true)}>
           <Pencil />修 改
         </Button>
-        <Button variant="destructive" className="flex-1" onClick={() => setOpenDeleteDialog(true)}>
+        <Button variant="destructive" className="w-1/2 flex-1" onClick={() => setOpenDeleteDialog(true)}>
           <Trash2 />删 除
         </Button>
       </div>
-      <EditBookmark open={openEditBookmark} onOpenChange={setOpenEditBookmark} data={data} refresh={() => {}} />
+      <EditBookmark open={openEditBookmark} onOpenChange={setOpenEditBookmark} formInitData={data} />
       <ConfirmDialog
         title={`删除该书签？`}
         description={data?.url}

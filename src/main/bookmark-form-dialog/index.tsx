@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  folderId?: string;
-  data?: chrome.bookmarks.BookmarkTreeNode;
-  refresh: () => void;
+  parentFolder?: chrome.bookmarks.BookmarkTreeNode;
+  formInitData?: chrome.bookmarks.BookmarkTreeNode;
 }
 
 const FormSchema = z.object({
@@ -23,25 +22,24 @@ const FormSchema = z.object({
   })
 });
 
-const EditBookmark = ({ open, onOpenChange, folderId, data, refresh }: Props) => {
+const BookmarkFormDialog = ({ open, onOpenChange, parentFolder, formInitData }: Props) => {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      title: data?.title || "",
-      url: data?.url || ""
+      title: formInitData?.title || "",
+      url: formInitData?.url || ""
     }
   });
 
   const onSubmit = (formValues: z.infer<typeof FormSchema>) => {
-    if (data) {
-      chrome.bookmarks.update(data.id, { title: formValues.title, url: formValues.url });
+    if (formInitData) {
+      chrome.bookmarks.update(formInitData.id, { title: formValues.title, url: formValues.url });
     } else {
-      chrome.bookmarks.create({ title: formValues.title, url: formValues.url, parentId: folderId });
+      chrome.bookmarks.create({ title: formValues.title, url: formValues.url, parentId: parentFolder?.id });
     }
 
     onOpenChange(false);
     form.reset();
-    refresh();
   };
 
   return (
@@ -56,7 +54,7 @@ const EditBookmark = ({ open, onOpenChange, folderId, data, refresh }: Props) =>
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{data ? "修改书签" : "添加书签"}</DialogTitle>
+          <DialogTitle>{formInitData ? "修改书签" : `添加书签到【${parentFolder?.title}】`}</DialogTitle>
         </DialogHeader>
         {/* form 必须包在这个层级，放在其他位置，submit 不会触发表单提交 */}
         <Form {...form}>
@@ -100,4 +98,4 @@ const EditBookmark = ({ open, onOpenChange, folderId, data, refresh }: Props) =>
   );
 };
 
-export default EditBookmark;
+export default BookmarkFormDialog;

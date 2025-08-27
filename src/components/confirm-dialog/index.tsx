@@ -33,7 +33,7 @@ const ConfirmDialog = ({ open, onOpenChange, title, description, confirmButtonVa
             </div>
             {title}
           </DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className="wrap-anywhere">{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>

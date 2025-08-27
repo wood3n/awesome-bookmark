@@ -117,3 +117,46 @@ export function exportBookmarkHtml(bookmarks: chrome.bookmarks.BookmarkTreeNode[
   ${renderDl(bookmarks).join("")}
   `;
 }
+
+export async function importBookmark(html: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  const rootDl = doc.querySelector("dl");
+  if (!rootDl) return [];
+
+  const parseDl = async (dlElement: HTMLDListElement, parentId: string = "1") => {
+    const childList = Array.from(dlElement.children);
+    console.log(childList);
+
+    let parentFolder: chrome.bookmarks.BookmarkTreeNode | undefined;
+    for (const child of childList) {
+      if (child.tagName === "DT") {
+        const h3 = child.querySelector("h3");
+        const a = child.querySelector("a");
+
+        // root bookmark bar folder
+        const isBookmarkBarFolder = h3?.getAttribute("personal_toolbar_folder");
+
+        if (h3) {
+          if (!isBookmarkBarFolder) {
+            parentFolder = await chrome.bookmarks.create({
+              parentId,
+              title: h3.textContent || "未命名文件夹"
+            });
+          }
+        } else if (a) {
+          await chrome.bookmarks.create({
+            parentId,
+            title: a.textContent || undefined,
+            url: a.getAttribute("href") as string
+          });
+        }
+      } else if (child.tagName === "DL") {
+        parseDl(child as HTMLDListElement);
+      }
+    }
+  };
+
+  await parseDl(rootDl);
+}

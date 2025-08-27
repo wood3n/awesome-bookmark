@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  folderId?: string;
+  parentFolder?: chrome.bookmarks.BookmarkTreeNode;
   data?: chrome.bookmarks.BookmarkTreeNode;
-  refresh: () => void;
 }
 
 const FormSchema = z.object({
@@ -22,7 +21,7 @@ const FormSchema = z.object({
   })
 });
 
-const EditFolder = ({ open, onOpenChange, folderId, data, refresh }: Props) => {
+const FolderForm = ({ open, onOpenChange, parentFolder, data }: Props) => {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -32,14 +31,13 @@ const EditFolder = ({ open, onOpenChange, folderId, data, refresh }: Props) => {
 
   const onSubmit = (formValues: z.infer<typeof FormSchema>) => {
     if (!data) {
-      chrome.bookmarks.create({ parentId: folderId, title: formValues.title });
+      chrome.bookmarks.create({ parentId: parentFolder?.id, title: formValues.title });
     } else {
       chrome.bookmarks.update(data.id, { title: formValues.title });
     }
 
     onOpenChange(false);
     form.reset();
-    refresh();
   };
 
   return (
@@ -54,7 +52,7 @@ const EditFolder = ({ open, onOpenChange, folderId, data, refresh }: Props) => {
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{data ? "修改文件夹" : "添加文件夹"}</DialogTitle>
+          <DialogTitle>{data ? "修改文件夹" : `添加文件夹到【${parentFolder?.title}】`}</DialogTitle>
         </DialogHeader>
         {/* form 必须包在这个层级，放在其他位置，submit 不会触发表单提交 */}
         <Form {...form}>
@@ -84,4 +82,4 @@ const EditFolder = ({ open, onOpenChange, folderId, data, refresh }: Props) => {
   );
 };
 
-export default EditFolder;
+export default FolderForm;
