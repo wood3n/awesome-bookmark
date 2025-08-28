@@ -118,45 +118,95 @@ export function exportBookmarkHtml(bookmarks: chrome.bookmarks.BookmarkTreeNode[
   `;
 }
 
-export async function importBookmark(html: string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
+export async function importBookmark(html: string, rootParentId: string | undefined) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
   const rootDl = doc.querySelector("dl");
-  if (!rootDl) return [];
 
-  const parseDl = async (dlElement: HTMLDListElement, parentId: string = "1") => {
-    const childList = Array.from(dlElement.children);
-    console.log(childList);
+  async function processDl(dlElement: Element, parentId?: string) {
+    for (let el = dlElement.firstElementChild; el; el = el.nextElementSibling) {
+      if (!el || el.tagName.toLowerCase() !== "dt") continue;
 
-    let parentFolder: chrome.bookmarks.BookmarkTreeNode | undefined;
-    for (const child of childList) {
-      if (child.tagName === "DT") {
-        const h3 = child.querySelector("h3");
-        const a = child.querySelector("a");
+      const firstChild = el.firstElementChild;
 
-        // root bookmark bar folder
-        const isBookmarkBarFolder = h3?.getAttribute("personal_toolbar_folder");
-
-        if (h3) {
-          if (!isBookmarkBarFolder) {
-            parentFolder = await chrome.bookmarks.create({
-              parentId,
-              title: h3.textContent || "未命名文件夹"
-            });
-          }
-        } else if (a) {
-          await chrome.bookmarks.create({
-            parentId,
-            title: a.textContent || undefined,
-            url: a.getAttribute("href") as string
-          });
+      const findDlInsideDt = (dtEl: Element) => {
+        for (const c of Array.from(dtEl.children || [])) {
+          if (c.tagName && c.tagName.toLowerCase() === "dl") return c;
         }
-      } else if (child.tagName === "DL") {
-        parseDl(child as HTMLDListElement);
+        return null;
+      };
+
+      if (firstChild) {
+        const tag = firstChild.tagName.toLowerCase();
+
+        if (tag === "h3" || tag === "h1") {
+          const title = (firstChild.textContent || "").trim();
+          let dlNode = findDlInsideDt(el);
+          if (!dlNode) {
+            let sib = el.nextElementSibling;
+            while (sib && sib.tagName && sib.tagName.toLowerCase() !== "dl") sib = sib.nextElementSibling;
+            if (sib && sib.tagName && sib.tagName.toLowerCase() === "dl") dlNode = sib;
+          }
+
+          try {
+            let folderId: string | undefined = "1";
+            if (!firstChild.getAttribute("PERSONAL_TOOLBAR_FOLDER")) {
+              const created = await chrome.bookmarks.create({ parentId, title });
+
+              folderId = created.id;
+            }
+            if (dlNode) {
+              await processDl(dlNode, folderId);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        } else if (tag === "a") {
+          const a = firstChild;
+          const title = (a.textContent || a.getAttribute("title") || "").trim() || a.getAttribute("href") || "";
+          const url = a.getAttribute("href") || "";
+          try {
+            await chrome.bookmarks.create({ parentId, title, url });
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          const innerH = el.querySelector && el.querySelector("h3, h1");
+          if (innerH) {
+            let dlNode = findDlInsideDt(el);
+            if (!dlNode) {
+              let sib = el.nextElementSibling;
+              while (sib && sib.tagName && sib.tagName.toLowerCase() !== "dl") sib = sib.nextElementSibling;
+              if (sib && sib.tagName && sib.tagName.toLowerCase() === "dl") dlNode = sib;
+            }
+            try {
+              const created = await chrome.bookmarks.create({
+                parentId,
+                title: innerH.textContent || ""
+              });
+              if (dlNode) await processDl(dlNode, created.id);
+            } catch (err) {
+              console.error(err);
+            }
+            continue;
+          }
+
+          const aInside = el.querySelector && el.querySelector("a");
+          if (aInside) {
+            const title =
+              (aInside.textContent || aInside.getAttribute("title") || "").trim() || aInside.getAttribute("href") || "";
+            const url = aInside.getAttribute("href") || "";
+            try {
+              await chrome.bookmarks.create({ parentId, title, url });
+            } catch (err) {
+              console.error(err);
+            }
+            continue;
+          }
+        }
       }
     }
-  };
+  }
+  if (!rootDl) return;
 
-  await parseDl(rootDl);
+  await processDl(rootDl, rootParentId);
 }
