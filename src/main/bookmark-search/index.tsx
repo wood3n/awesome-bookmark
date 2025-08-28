@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { faviconURL } from "@/lib/utils";
+
+import BookmarkItem from "./item";
 
 interface SearchProps {
   open: boolean;
@@ -12,9 +12,10 @@ interface SearchProps {
 
 const SearchDialog = ({ open, onOpenChange }: SearchProps) => {
   const [searchResult, setSearchResult] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
+  const searchValueRef = useRef<string>("");
 
-  const search = (searchValue: string) => {
-    chrome.bookmarks.search(searchValue, (res) => {
+  const search = () => {
+    chrome.bookmarks.search(searchValueRef.current, (res) => {
       setSearchResult(res);
     });
   };
@@ -28,7 +29,8 @@ const SearchDialog = ({ open, onOpenChange }: SearchProps) => {
               onChange={(e) => {
                 const searchValue = e.target.value?.trim();
                 if (searchValue) {
-                  search(searchValue);
+                  searchValueRef.current = searchValue;
+                  search();
                 }
               }}
               className="flex-none"
@@ -37,19 +39,7 @@ const SearchDialog = ({ open, onOpenChange }: SearchProps) => {
           </div>
           <div className="mb-4 flex min-w-0 flex-1 flex-col space-y-4 overflow-auto px-4">
             {searchResult.map((item) => (
-              <Card key={item.id} className="p-2">
-                <CardContent className="flex items-center space-x-2 p-2">
-                  <img width={24} src={faviconURL(item.url || "")} alt={item.title} />
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-xl hover:text-[#60a5fa] hover:underline"
-                  >
-                    {item.title || item.url}
-                  </a>
-                </CardContent>
-              </Card>
+              <BookmarkItem key={item.id} data={item} refresh={search} />
             ))}
           </div>
         </div>

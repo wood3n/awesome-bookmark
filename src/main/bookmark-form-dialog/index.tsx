@@ -13,6 +13,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   parentFolder?: chrome.bookmarks.BookmarkTreeNode;
   formInitData?: chrome.bookmarks.BookmarkTreeNode;
+  afterSubmit?: VoidFunction;
 }
 
 const FormSchema = z.object({
@@ -22,7 +23,7 @@ const FormSchema = z.object({
   })
 });
 
-const BookmarkFormDialog = ({ open, onOpenChange, parentFolder, formInitData }: Props) => {
+const BookmarkFormDialog = ({ open, onOpenChange, parentFolder, formInitData, afterSubmit }: Props) => {
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -40,6 +41,7 @@ const BookmarkFormDialog = ({ open, onOpenChange, parentFolder, formInitData }: 
 
     onOpenChange(false);
     form.reset();
+    afterSubmit?.();
   };
 
   return (

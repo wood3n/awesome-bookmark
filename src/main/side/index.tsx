@@ -23,7 +23,7 @@ const Side = () => {
   const [folderType, setFolderType] = useState<chrome.bookmarks.FolderType>("bookmarks-bar");
   const [openCreateFolder, setOpenCreateFolder] = useState<boolean>(false);
 
-  const { bookmarks, folderTypeOptions, setFolder } = useBookmark();
+  const { bookmarks, folderTypeOptions, folder: currentFolder, setFolder } = useBookmark();
 
   const handleFolderTypeChange = (v: string) => {
     setFolderType(v as chrome.bookmarks.FolderType);
@@ -76,11 +76,7 @@ const Side = () => {
         </SidebarMenu>
       </SidebarContent>
       <SidebarRail />
-      <FolderForm
-        open={openCreateFolder}
-        onOpenChange={setOpenCreateFolder}
-        parentFolder={bookmarks?.find((item) => item.folderType === "bookmarks-bar")}
-      />
+      <FolderForm open={openCreateFolder} onOpenChange={setOpenCreateFolder} parentFolder={currentFolder} />
     </Sidebar>
   );
 };

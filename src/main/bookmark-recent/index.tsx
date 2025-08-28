@@ -14,7 +14,7 @@ const BookmarkRecent = () => {
   const [bookmarks, setBookmarks] = useState<chrome.bookmarks.BookmarkTreeNode[]>([]);
 
   useEffect(() => {
-    chrome.bookmarks.getRecent(20, (items) => {
+    chrome.bookmarks.getRecent(3, (items) => {
       setBookmarks(items);
     });
   }, []);
